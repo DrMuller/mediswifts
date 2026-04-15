@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Swift Migration Simulator</title>
+    <style>
+      :root {
+        --bg: #000811;
+        --panel: rgba(8, 16, 32, 0.82);
+        --border: rgba(50, 80, 140, 0.25);
+        --text: #c8d8f0;
+        --text-dim: #5a7a9a;
+        --accent: #4488ff;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { overflow: hidden; background: var(--bg); font-family: system-ui, -apple-system, sans-serif; color: var(--text); }
+      #c { position: fixed; inset: 0; }
+      #c canvas { display: block; }
+
+      #title { position: fixed; top: 24px; left: 28px; z-index: 10; pointer-events: none; }
+      #title h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; color: #e0e8f8; }
+      #title p { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+      #legend {
+        position: fixed; top: 24px; right: 24px; z-index: 10;
+        background: var(--panel); backdrop-filter: blur(14px);
+        border: 1px solid var(--border); border-radius: 10px;
+        padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;
+      }
+      .li { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+      .ld { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .ln { font-weight: 500; }
+      .ll { font-style: italic; color: var(--text-dim); font-size: 10px; margin-left: 2px; }
+
+      #bp {
+        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10;
+        background: var(--panel); backdrop-filter: blur(14px);
+        border: 1px solid var(--border); border-radius: 14px;
+        padding: 14px 22px 10px; width: min(640px, calc(100vw - 48px));
+      }
+      #kr { display: flex; justify-content: center; gap: 24px; margin-bottom: 10px; }
+      .ki { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+      .kd { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+      .kv {
+        font-variant-numeric: tabular-nums;
+        font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+        font-size: 13px; font-weight: 600; min-width: 70px;
+      }
+      #cr { display: flex; align-items: center; gap: 12px; }
+
+      #pb, #sb {
+        background: rgba(40, 60, 100, 0.5); border: 1px solid var(--border);
+        border-radius: 8px; color: var(--text); cursor: pointer;
+        font-size: 13px; padding: 5px 10px; transition: background 0.15s; font-family: inherit;
+      }
+      #pb:hover, #sb:hover { background: rgba(50, 80, 140, 0.5); }
+      #pb { font-size: 16px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; padding: 0; }
+      #sb { font-variant-numeric: tabular-nums; font-family: 'SF Mono','Fira Code',monospace; font-size: 11px; min-width: 36px; text-align: center; }
+      #dl { font-size: 14px; font-weight: 600; min-width: 62px; text-align: center; }
+
+      #sw { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+      #tl {
+        -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+        background: rgba(30, 50, 80, 0.6); border-radius: 2px; outline: none; cursor: pointer;
+      }
+      #tl::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+        background: var(--accent); cursor: pointer; box-shadow: 0 0 8px rgba(68,136,255,0.5);
+      }
+      #tl::-moz-range-thumb {
+        width: 14px; height: 14px; border-radius: 50%; background: var(--accent);
+        border: none; cursor: pointer; box-shadow: 0 0 8px rgba(68,136,255,0.5);
+      }
+      #mo { display: flex; justify-content: space-between; padding: 0 4px; }
+      #mo span { font-size: 9px; color: var(--text-dim); letter-spacing: 0.5px; width: 20px; text-align: center; }
+
+      @media (max-width: 520px) {
+        #bp { padding: 10px 14px 8px; border-radius: 10px; }
+        #kr { gap: 12px; }
+        #title h1 { font-size: 16px; }
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="c"></div>
+
+    <div id="title">
+      <h1>Swift Migration</h1>
+      <p>Annual migration patterns across Europe &amp; Africa</p>
+    </div>
+
+    <div id="legend"></div>
+
+    <div id="bp">
+      <div id="kr"></div>
+      <div id="cr">
+        <button id="pb">&#x23F8;</button>
+        <span id="dl">Jan 1</span>
+        <div id="sw">
+          <input type="range" id="tl" min="0" max="1" step="0.0005" value="0" />
+          <div id="mo">
+            <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span>
+            <span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span>
+          </div>
+        </div>
+        <button id="sb">1x</button>
+      </div>
+    </div>
+
+    <script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const DEG = Math.PI / 180;
+
+const species = [
+  {
+    id: 'common', name: 'Common Swift', sci: 'Apus apus',
+    color: [1.0, 0.54, 0.24], hex: '#FF8A3D', count: 80,
+    wp: [
+      {t:0,lat:-2,lng:25},{t:.03,lat:-6,lng:28},{t:.06,lat:-10,lng:32},
+      {t:.10,lat:-12,lng:34},{t:.15,lat:-8,lng:30},{t:.20,lat:-3,lng:26},
+      {t:.25,lat:0,lng:22},{t:.28,lat:3,lng:12},{t:.30,lat:6,lng:0},
+      {t:.32,lat:7,lng:-8},{t:.35,lat:14,lng:-10},{t:.37,lat:22,lng:-8},
+      {t:.39,lat:30,lng:-6},{t:.41,lat:36,lng:-5},{t:.43,lat:43,lng:0},
+      {t:.45,lat:48,lng:5},{t:.47,lat:52,lng:10},{t:.49,lat:55,lng:12},
+      {t:.58,lat:55,lng:12},
+      {t:.60,lat:53,lng:10},{t:.62,lat:48,lng:6},{t:.64,lat:44,lng:2},
+      {t:.66,lat:40,lng:-2},{t:.68,lat:36,lng:-5},{t:.71,lat:30,lng:-9},
+      {t:.74,lat:24,lng:-14},{t:.77,lat:18,lng:-16},{t:.80,lat:12,lng:-12},
+      {t:.83,lat:8,lng:-8},{t:.86,lat:5,lng:-2},{t:.89,lat:3,lng:6},
+      {t:.92,lat:2,lng:14},{t:.95,lat:0,lng:20},{t:1,lat:-2,lng:25},
+    ],
+  },
+  {
+    id: 'alpine', name: 'Alpine Swift', sci: 'Tachymarptis melba',
+    color: [0.30, 0.93, 0.92], hex: '#4DEEEA', count: 60,
+    wp: [
+      {t:0,lat:-1,lng:35},{t:.08,lat:0,lng:35},{t:.17,lat:2,lng:35},
+      {t:.20,lat:6,lng:36},{t:.23,lat:12,lng:36},{t:.26,lat:20,lng:35},
+      {t:.29,lat:28,lng:30},{t:.31,lat:33,lng:24},{t:.33,lat:36,lng:18},
+      {t:.35,lat:40,lng:14},{t:.37,lat:44,lng:10},{t:.39,lat:46,lng:8},
+      {t:.60,lat:46,lng:8},
+      {t:.63,lat:44,lng:10},{t:.66,lat:40,lng:14},{t:.69,lat:36,lng:18},
+      {t:.72,lat:32,lng:24},{t:.75,lat:26,lng:30},{t:.78,lat:20,lng:34},
+      {t:.81,lat:14,lng:36},{t:.84,lat:8,lng:36},{t:.88,lat:3,lng:35},
+      {t:.92,lat:0,lng:35},{t:1,lat:-1,lng:35},
+    ],
+  },
+  {
+    id: 'pallid', name: 'Pallid Swift', sci: 'Apus pallidus',
+    color: [0.80, 0.42, 0.90], hex: '#CB6CE6', count: 50,
+    wp: [
+      {t:0,lat:10,lng:5},{t:.08,lat:10,lng:3},{t:.16,lat:10,lng:2},
+      {t:.19,lat:14,lng:1},{t:.22,lat:20,lng:0},{t:.25,lat:26,lng:-1},
+      {t:.28,lat:31,lng:-1},{t:.31,lat:35,lng:0},{t:.34,lat:38,lng:0},
+      {t:.58,lat:38,lng:0},
+      {t:.62,lat:36,lng:-1},{t:.66,lat:32,lng:-1},{t:.70,lat:26,lng:0},
+      {t:.74,lat:20,lng:1},{t:.78,lat:15,lng:2},{t:.82,lat:11,lng:3},
+      {t:.86,lat:10,lng:4},{t:1,lat:10,lng:5},
+    ],
+  },
+];
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371, toR = DEG;
+  const dLat = (lat2 - lat1) * toR, dLng = (lng2 - lng1) * toR;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*toR)*Math.cos(lat2*toR)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function latLngToV3(lat, lng, r) {
+  const phi = (90-lat)*DEG, theta = (lng+180)*DEG;
+  return new THREE.Vector3(
+    -(r*Math.sin(phi)*Math.cos(theta)),
+    r*Math.cos(phi),
+    r*Math.sin(phi)*Math.sin(theta),
+  );
+}
+
+function catmull(p0,p1,p2,p3,t) {
+  const t2=t*t, t3=t2*t;
+  return 0.5*((-p0+3*p1-3*p2+p3)*t3+(2*p0-5*p1+4*p2-p3)*t2+(-p0+p2)*t+2*p1);
+}
+
+// ═══════════════════════════════════════════
+// GLOBE
+// ═══════════════════════════════════════════
+function createGlobe(scene, R) {
+  // Fallback texture
+  const cv = document.createElement('canvas');
+  cv.width = 1024; cv.height = 512;
+  const cx = cv.getContext('2d');
+  cx.fillStyle = '#060d1a'; cx.fillRect(0,0,1024,512);
+  cx.strokeStyle = 'rgba(25,50,100,0.4)'; cx.lineWidth = 0.5;
+  for (let i=0;i<=360;i+=30){const x=i/360*1024;cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,512);cx.stroke();}
+  for (let i=0;i<=180;i+=30){const y=i/180*512;cx.beginPath();cx.moveTo(0,y);cx.lineTo(1024,y);cx.stroke();}
+  const fallback = new THREE.CanvasTexture(cv);
+  fallback.colorSpace = THREE.SRGBColorSpace;
+
+  const mat = new THREE.MeshBasicMaterial({ map: fallback, color: 0x999999 });
+  const globe = new THREE.Mesh(new THREE.SphereGeometry(R,64,64), mat);
+  scene.add(globe);
+
+  new THREE.TextureLoader().load(
+    'https://unpkg.com/three-globe/example/img/earth-night.jpg',
+    tex => { tex.colorSpace = THREE.SRGBColorSpace; mat.map = tex; mat.needsUpdate = true; },
+  );
+
+  // Atmosphere
+  const aM = new THREE.ShaderMaterial({
+    vertexShader: `varying vec3 vN; varying vec3 vV;
+      void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader: `varying vec3 vN; varying vec3 vV;
+      void main(){ float rim=1.0-max(dot(vN,vV),0.0); float i=pow(rim,3.0)*1.2; gl_FragColor=vec4(0.25,0.5,1.0,i*0.7); }`,
+    transparent:true, blending:THREE.AdditiveBlending, side:THREE.BackSide, depthWrite:false,
+  });
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.04,64,64), aM));
+
+  // Stars
+  const n=4000, sp=new Float32Array(n*3), ss=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const r2=60+Math.random()*50, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+    sp[i*3]=r2*Math.sin(ph)*Math.cos(th); sp[i*3+1]=r2*Math.sin(ph)*Math.sin(th); sp[i*3+2]=r2*Math.cos(ph);
+    ss[i]=0.05+Math.random()*0.2;
+  }
+  const sg=new THREE.BufferGeometry();
+  sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  sg.setAttribute('size',new THREE.BufferAttribute(ss,1));
+  const sm=new THREE.ShaderMaterial({
+    vertexShader:`attribute float size; void main(){ vec4 mv=modelViewMatrix*vec4(position,1.); gl_PointSize=size*(150.0/-mv.z); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`void main(){ float d=length(gl_PointCoord-0.5); if(d>0.5)discard; float a=1.0-smoothstep(0.0,0.5,d); gl_FragColor=vec4(0.9,0.92,1.0,a*a); }`,
+    transparent:true, depthWrite:false,
+  });
+  scene.add(new THREE.Points(sg,sm));
+}
+
+// ═══════════════════════════════════════════
+// FLOCK
+// ═══════════════════════════════════════════
+class Flock {
+  constructor(sp, scene, R) {
+    this.sp = sp; this.R = R; this.wp = sp.wp;
+
+    // Cumulative km
+    this.cumKm = [0];
+    for (let i=1;i<this.wp.length;i++){
+      const a=this.wp[i-1], b=this.wp[i];
+      this.cumKm.push(this.cumKm[i-1]+haversineKm(a.lat,a.lng,b.lat,b.lng));
+    }
+
+    const head = sp.count, trail = head*3;
+    this.head = head; this.trail = trail; this.total = head+trail;
+
+    this.off = Array.from({length:head},()=>({
+      dx:(Math.random()-.5)*2, dy:(Math.random()-.5)*2, dz:(Math.random()-.5)*2,
+      ph:Math.random()*Math.PI*2, fr:.6+Math.random()*1.4,
+    }));
+
+    const pos=new Float32Array(this.total*3);
+    const alp=new Float32Array(this.total);
+    const siz=new Float32Array(this.total);
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('alpha',new THREE.BufferAttribute(alp,1));
+    geo.setAttribute('size',new THREE.BufferAttribute(siz,1));
+
+    const [r,g,b]=sp.color;
+    const mat=new THREE.ShaderMaterial({
+      uniforms:{color:{value:new THREE.Color(r,g,b)}},
+      vertexShader:`attribute float alpha; attribute float size; varying float vA;
+        void main(){ vA=alpha; vec4 mv=modelViewMatrix*vec4(position,1.); gl_PointSize=size*(250.0/-mv.z); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader:`uniform vec3 color; varying float vA;
+        void main(){ float d=length(gl_PointCoord-0.5); if(d>0.5)discard; float g=1.0-smoothstep(0.0,0.5,d); gl_FragColor=vec4(color,g*g*vA); }`,
+      transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+    });
+    this.pts=new THREE.Points(geo,mat);
+    scene.add(this.pts);
+
+    // Route line
+    const lp=[];
+    for(let i=0;i<=300;i++) lp.push(this.posAt(i/300));
+    const lg=new THREE.BufferGeometry().setFromPoints(lp);
+    scene.add(new THREE.Line(lg,new THREE.LineBasicMaterial({color:new THREE.Color(r,g,b),transparent:true,opacity:.12})));
+  }
+
+  seg(t){ let i=0; while(i<this.wp.length-2&&this.wp[i+1].t<t)i++; return i; }
+
+  llAt(t){
+    const wp=this.wp, i=this.seg(t);
+    const span=wp[i+1].t-wp[i].t, lt=span>0?(t-wp[i].t)/span:0;
+    const i0=Math.max(0,i-1), i3=Math.min(wp.length-1,i+2);
+    return {
+      lat:catmull(wp[i0].lat,wp[i].lat,wp[i+1].lat,wp[i3].lat,lt),
+      lng:catmull(wp[i0].lng,wp[i].lng,wp[i+1].lng,wp[i3].lng,lt),
+    };
+  }
+
+  posAt(t){ const {lat,lng}=this.llAt(Math.max(0,Math.min(t,1))); return latLngToV3(lat,lng,this.R); }
+
+  getKm(t){
+    const i=this.seg(t), wp=this.wp;
+    const span=wp[i+1].t-wp[i].t, f=span>0?(t-wp[i].t)/span:0;
+    return Math.round(this.cumKm[i]+(this.cumKm[i+1]-this.cumKm[i])*f);
+  }
+
+  update(t,el){
+    const P=this.pts.geometry.attributes.position.array;
+    const A=this.pts.geometry.attributes.alpha.array;
+    const S=this.pts.geometry.attributes.size.array;
+
+    const ctr=this.posAt(t);
+    const ahd=this.posAt(Math.min(t+.004,1));
+    const dir=new THREE.Vector3().subVectors(ahd,ctr);
+    const spd=dir.length(); dir.normalize();
+    const up=ctr.clone().normalize();
+    const side=new THREE.Vector3().crossVectors(dir,up).normalize();
+
+    const base=.06, extra=Math.min(spd*3,.14), spread=base+extra;
+
+    for(let i=0;i<this.head;i++){
+      const o=this.off[i];
+      const w1=Math.sin(el*o.fr+o.ph)*.35, w2=Math.cos(el*o.fr*.7+o.ph*1.3)*.35;
+      const p=ctr.clone()
+        .addScaledVector(dir, o.dx*spread*1.6+o.dx*spread*w1)
+        .addScaledVector(up, o.dy*spread*.5+o.dy*spread*.2*w2)
+        .addScaledVector(side, o.dz*spread*.7+o.dz*spread*.2*w1);
+      p.normalize().multiplyScalar(this.R+.06);
+      P[i*3]=p.x; P[i*3+1]=p.y; P[i*3+2]=p.z;
+      A[i]=.85; S[i]=i===0?.18:.08+Math.random()*.03;
+    }
+
+    for(let j=0;j<this.trail;j++){
+      const f=(j+1)/this.trail, tt=t-f*.025;
+      const k=this.head+j, k3=k*3;
+      if(tt<0){P[k3]=P[k3+1]=P[k3+2]=0;A[k]=0;S[k]=0;continue;}
+      const tp=this.posAt(tt); tp.normalize().multiplyScalar(this.R+.04);
+      P[k3]=tp.x;P[k3+1]=tp.y;P[k3+2]=tp.z;
+      const fo=1-f; A[k]=fo*fo*.45; S[k]=.08*fo;
+    }
+
+    this.pts.geometry.attributes.position.needsUpdate=true;
+    this.pts.geometry.attributes.alpha.needsUpdate=true;
+    this.pts.geometry.attributes.size.needsUpdate=true;
+  }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+const GLOBE_R = 5;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,200);
+camera.position.set(12,5,2);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000811);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.getElementById('c').appendChild(renderer.domElement);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.6,.5,.82));
+composer.addPass(new OutputPass());
+
+const ctrl = new OrbitControls(camera,renderer.domElement);
+ctrl.enableDamping=true; ctrl.dampingFactor=.06;
+ctrl.minDistance=7; ctrl.maxDistance=30; ctrl.enablePan=false;
+
+scene.add(new THREE.AmbientLight(0x222244,.8));
+createGlobe(scene, GLOBE_R);
+
+const flocks = species.map(s=>new Flock(s,scene,GLOBE_R));
+
+// ── UI ──
+const legEl=document.getElementById('legend');
+species.forEach(s=>{
+  legEl.innerHTML+=`<div class="li"><span class="ld" style="background:${s.hex};box-shadow:0 0 6px ${s.hex}80"></span><span class="ln">${s.name}</span><span class="ll">${s.sci}</span></div>`;
+});
+
+const krEl=document.getElementById('kr');
+species.forEach(s=>{
+  krEl.innerHTML+=`<div class="ki"><span class="kd" style="background:${s.hex}"></span><span class="kv" id="km-${s.id}">0 km</span></div>`;
+});
+
+let t=0, playing=true;
+const spds=[1,2,4,.5]; let si=0;
+const tlEl=document.getElementById('tl');
+const dlEl=document.getElementById('dl');
+const pbEl=document.getElementById('pb');
+const sbEl=document.getElementById('sb');
+
+pbEl.onclick=()=>{playing=!playing; pbEl.textContent=playing?'\u23F8':'\u25B6';};
+sbEl.onclick=()=>{si=(si+1)%spds.length; sbEl.textContent=spds[si]+'x';};
+tlEl.oninput=()=>{t=parseFloat(tlEl.value);};
+
+function tDate(t){
+  const d=new Date(2024,0,1); d.setDate(d.getDate()+Math.floor(t*365));
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+// ── Loop ──
+const clock=new THREE.Clock();
+(function anim(){
+  requestAnimationFrame(anim);
+  const dt=Math.min(clock.getDelta(),.05), el=clock.getElapsedTime();
+  if(playing){t+=(dt/60)*spds[si]; if(t>1)t-=1; tlEl.value=t;}
+  dlEl.textContent=tDate(t);
+  flocks.forEach((f,i)=>{
+    f.update(t,el);
+    document.getElementById('km-'+species[i].id).textContent=f.getKm(t).toLocaleString()+' km';
+  });
+  ctrl.update();
+  composer.render();
+})();
+
+window.onresize=()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  composer.setSize(innerWidth,innerHeight);
+};
+    </script>
+  </body>
+</html>
