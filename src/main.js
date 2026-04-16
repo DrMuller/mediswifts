@@ -77,9 +77,18 @@ const dateEl = document.getElementById('date-label');
 const playBtn = document.getElementById('play-btn');
 const speedBtn = document.getElementById('speed-btn');
 
+const iconPause = document.getElementById('icon-pause');
+const iconPlay = document.getElementById('icon-play');
+
+function setPlayIcon(isPlaying) {
+  iconPause.style.display = isPlaying ? '' : 'none';
+  iconPlay.style.display = isPlaying ? 'none' : '';
+  playBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+}
+
 playBtn.addEventListener('click', () => {
   playing = !playing;
-  playBtn.textContent = playing ? '\u23F8' : '\u25B6';
+  setPlayIcon(playing);
 });
 
 speedBtn.addEventListener('click', () => {
